@@ -5,3 +5,4 @@ contract Token {
     string public name = "My Token";
 
 }
+
