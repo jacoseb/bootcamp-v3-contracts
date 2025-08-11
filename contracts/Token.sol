@@ -7,6 +7,10 @@ contract Token {
     uint8 public decimals = 18;
     uint256 public totalSupply;
 
+    mapping(address => uint256) public balanceOf;
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
     constructor(
         string memory _name, 
         string memory _symbol, 
@@ -15,7 +19,19 @@ contract Token {
         name = _name;
         symbol = _symbol;
         totalSupply = _totalSupply * (10 ** decimals);
-        // This is just a placeholder; actual token distribution logic would go here
+        balanceOf[msg.sender] = totalSupply;
+    }
+
+    function transfer(address _to, uint256 _value) public returns (bool success) {
+        require(balanceOf[msg.sender] >= _value, "Token: Insufficent Funds");
+        require(_to != address(0), "Token: Recipient is Address 0");
+
+        balanceOf[msg.sender] -= _value;
+        balanceOf[_to] += _value;
+
+        emit Transfer(msg.sender, _to, _value);
+
+        return true;
     }
 }
 
