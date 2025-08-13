@@ -18,7 +18,13 @@ contract Exchange {
         address user,
         uint256 amount,
         uint256 balance
-        );
+    );
+    event TokensWithdrawn(
+        address token,
+        address user,
+        uint256 amount,
+        uint256 balance
+    );
 
     constructor(address _feeAccount, uint256 _feePercent) {
         feeAccount = _feeAccount;
@@ -47,6 +53,32 @@ contract Exchange {
             "Exchange: Token transfer failed"
         );
     }
+
+    function withdrawToken(address _token, uint256 _amount) public {
+        require(
+            totalBalanceOf(_token, msg.sender) >= _amount,
+            "Exchange: Insufficient balance"
+        );
+        // Update the user balance
+        userTotalTokenBalance[_token][msg.sender] -= _amount;
+
+
+        // Emit an event
+        emit TokensWithdrawn(
+            _token,
+            msg.sender,
+            _amount,
+            userTotalTokenBalance[_token][msg.sender]
+        );
+ 
+        // Transfer tokens back to user
+        require(
+            Token(_token).transfer(msg.sender, _amount),
+            "Exchange: Token transfer failed"
+        );
+
+    }
+
 
     function totalBalanceOf(
         address _token,
