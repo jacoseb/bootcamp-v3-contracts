@@ -26,14 +26,14 @@ describe("Exchange", ()=> {
 
         describe("Success", () => {
             it ("tracks the token deposit", async () => {
-            const { tokens: { token0 }, exchange, accounts} = await loadFixture(depositExchangeFixture)
-            expect(await token0.balanceOf(await exchange.getAddress())).to.equal(AMOUNT)
-            expect(await exchange.totalBalanceOf(await token0.getAddress(), accounts.user1.address)).to.equal(AMOUNT)
+                const { tokens: { token0 }, exchange, accounts} = await loadFixture(depositExchangeFixture)
+                expect(await token0.balanceOf(await exchange.getAddress())).to.equal(AMOUNT)
+                expect(await exchange.totalBalanceOf(await token0.getAddress(), accounts.user1.address)).to.equal(AMOUNT)
             })
 
             it ("emits a TokensDeposited event", async () => {
-            const { tokens: { token0 }, exchange, accounts, transaction } = await loadFixture(depositExchangeFixture)
-            await expect(transaction).to.emit(exchange, "TokensDeposited")
+                const { tokens: { token0 }, exchange, accounts, transaction } = await loadFixture(depositExchangeFixture)
+                await expect(transaction).to.emit(exchange, "TokensDeposited")
                 .withArgs(
                     await token0.getAddress(),
                     accounts.user1.address,
@@ -55,23 +55,23 @@ describe("Exchange", ()=> {
         const AMOUNT = tokens("100")
         describe("Success", () => {
             it ("withdraw token funds", async () => {
-            const { tokens: { token0 }, exchange, accounts} = await loadFixture(depositExchangeFixture)
+                const { tokens: { token0 }, exchange, accounts} = await loadFixture(depositExchangeFixture)
 
-            // Now withdraw tokens
-            const transaction = await exchange.connect(accounts.user1).withdrawToken(await token0.getAddress(), AMOUNT)
-            await transaction.wait()
+                // Now withdraw tokens
+                const transaction = await exchange.connect(accounts.user1).withdrawToken(await token0.getAddress(), AMOUNT)
+                await transaction.wait()
 
-            expect(await token0.balanceOf(await exchange.getAddress())).to.equal(0)
-            expect(await exchange.totalBalanceOf(await token0.getAddress(), accounts.user1.address)).to.equal(0)
+                expect(await token0.balanceOf(await exchange.getAddress())).to.equal(0)
+                expect(await exchange.totalBalanceOf(await token0.getAddress(), accounts.user1.address)).to.equal(0)
             })
 
             it ("emits a TokensWithdrawn event", async () => {
-            const { tokens: { token0 }, exchange, accounts } = await loadFixture(depositExchangeFixture)
+                const { tokens: { token0 }, exchange, accounts } = await loadFixture(depositExchangeFixture)
 
-            const transaction = await exchange.connect(accounts.user1).withdrawToken(await token0.getAddress(), AMOUNT)
-            await transaction.wait()
-
-            await expect(transaction).to.emit(exchange, "TokensWithdrawn")
+                const transaction = await exchange.connect(accounts.user1).withdrawToken(await token0.getAddress(), AMOUNT)
+                await transaction.wait()
+                
+                await expect(transaction).to.emit(exchange, "TokensWithdrawn")
                 .withArgs(
                     await token0.getAddress(),
                     accounts.user1.address,
@@ -96,15 +96,15 @@ describe("Exchange", ()=> {
     })
 
     describe("Making Orders", () => {
-        const AMOUNT = tokens("100")
+
         describe("Success", () => {
             it ("tracts the newly creates order", async () => {
-            const { exchange } = await loadFixture(orderExchangeFixture)
-            expect(await exchange.orderCount()).to.equal(1)
+                const { exchange } = await loadFixture(orderExchangeFixture)
+                expect(await exchange.orderCount()).to.equal(1)
             })
 
-            it ("emits an OrderCreated event", async () => {
-            const { tokens: { token0, token1 }, exchange, accounts, transaction } = await loadFixture(orderExchangeFixture)
+            it ("emits a OrderCreated event", async () => {
+                const { tokens: { token0, token1 }, exchange, accounts, transaction } = await loadFixture(orderExchangeFixture)
 
                 const ORDER_ID = 1
                 const AMOUNT = tokens("1")
@@ -134,6 +134,58 @@ describe("Exchange", ()=> {
                     await token0.getAddress(),
                     tokens(1)
                 )).to.be.revertedWith(ERROR)
+            })
+        })
+    })
+
+    describe("Cancelling Orders", () => {
+
+        describe("Success", () => {
+            it ("updates cancelled orders ", async () => {
+                const { exchange, accounts } = await loadFixture(orderExchangeFixture)
+
+                const transaction = await exchange.connect(accounts.user1).cancelOrder(1)
+                await transaction.wait()
+
+                expect(await exchange.isOrderCancelled(1)).to.equal(true)
+            })
+
+            it ("emits a OrderCreated event", async () => {
+                const { tokens: { token0, token1 }, exchange, accounts } = await loadFixture(orderExchangeFixture)
+
+                const transaction = await exchange.connect(accounts.user1).cancelOrder(1)
+                await transaction.wait()
+
+                const ORDER_ID = 1
+                const AMOUNT = tokens(1)
+                const {timestamp} = await ethers.provider.getBlock()
+
+                await expect(transaction).to.emit(exchange, "OrderCancelled")
+                    .withArgs(
+                        ORDER_ID,
+                        accounts.user1.address,
+                        await token1.getAddress(),
+                        AMOUNT,
+                        await token0.getAddress(),
+                        AMOUNT,
+                        timestamp
+                    );
+            })
+        })
+
+        describe("Failure", () => {
+            it ("reject invalid order ids", async () => {
+
+                const { exchange, accounts } = await loadFixture(orderExchangeFixture)
+                const ERROR = "Exchange: Order does not exist"
+
+                await expect(exchange.connect(accounts.user1).cancelOrder(99999)).to.be.revertedWith(ERROR)
+            })
+            it ("rejects unauthorized cancelation", async () => {
+                const { exchange, accounts } = await loadFixture(orderExchangeFixture)
+                const ERROR = "Exchange: Not the owner"
+
+                await expect(exchange.connect(accounts.user2).cancelOrder(1)).to.be.revertedWith(ERROR)
             })
         })
     })
