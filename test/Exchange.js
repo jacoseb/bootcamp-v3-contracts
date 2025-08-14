@@ -2,7 +2,7 @@ const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers")
 const { expect } = require("chai")
 const { ethers } = require("hardhat")
 
-const { deployExchangeFixture, depositExchangeFixture } = require("./helpers/ExchangeFixtures")
+const { deployExchangeFixture, depositExchangeFixture, orderExchangeFixture } = require("./helpers/ExchangeFixtures")
 
 const tokens = (n) => {
     return ethers.parseUnits(n.toString(), 18)
@@ -41,7 +41,6 @@ describe("Exchange", ()=> {
                     AMOUNT
                 )
             })
-
         })
 
         describe("Failure", () => {
@@ -54,7 +53,6 @@ describe("Exchange", ()=> {
 
     describe("Withdrawing Tokens", () => {
         const AMOUNT = tokens("100")
-
         describe("Success", () => {
             it ("withdraw token funds", async () => {
             const { tokens: { token0 }, exchange, accounts} = await loadFixture(depositExchangeFixture)
@@ -81,7 +79,6 @@ describe("Exchange", ()=> {
                     0
                 )
             })
-
         })
 
         describe("Failure", () => {
@@ -96,7 +93,49 @@ describe("Exchange", ()=> {
                 ).to.be.revertedWith(ERROR)
             })
         })
+    })
 
+    describe("Making Orders", () => {
+        const AMOUNT = tokens("100")
+        describe("Success", () => {
+            it ("tracts the newly creates order", async () => {
+            const { exchange } = await loadFixture(orderExchangeFixture)
+            expect(await exchange.orderCount()).to.equal(1)
+            })
+
+            it ("emits an OrderCreated event", async () => {
+            const { tokens: { token0, token1 }, exchange, accounts, transaction } = await loadFixture(orderExchangeFixture)
+
+                const ORDER_ID = 1
+                const AMOUNT = tokens("1")
+                const {timestamp} = await ethers.provider.getBlock()
+
+                await expect(transaction).to.emit(exchange, "OrderCreated")
+                    .withArgs(
+                        ORDER_ID,
+                        accounts.user1.address,
+                        await token1.getAddress(),
+                        AMOUNT,
+                        await token0.getAddress(),
+                        AMOUNT,
+                        timestamp
+                    );
+            })
+        })
+
+        describe("Failure", () => {
+            it ("Rejects with no balance", async () => {
+                const { tokens: { token0, token1 }, exchange, accounts } = await loadFixture(deployExchangeFixture)
+                const ERROR = "Exchange: Insufficient balance"
+
+                await expect(exchange.connect(accounts.user1).makeOrder(
+                    await token1.getAddress(),
+                    tokens(1),
+                    await token0.getAddress(),
+                    tokens(1)
+                )).to.be.revertedWith(ERROR)
+            })
+        })
     })
 
 })
