@@ -10,7 +10,7 @@ const tokens = (n) => {
 
 describe("Token", ()=> {
     describe("Deployment", () => {
-        const NAME = "Kbessan Coin"
+        const NAME = "KBessan Coin"
         const SYMBOL = "KBC"
         const DECIMALS = 18
         const TOTAL_SUPPLY = tokens("1000000")

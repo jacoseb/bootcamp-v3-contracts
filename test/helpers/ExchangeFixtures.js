@@ -6,7 +6,7 @@ async function deployExchangeFixture() {
     const Token = await ethers.getContractFactory("Token")
 
     // Deploy token contracts
-    const token0 = await Token.deploy("Kbessan Coin", "KBC", 1000000)
+    const token0 = await Token.deploy("KBessan Coin", "KBC", 1000000)
     const token1 = await Token.deploy("Mock DAI", "mDAI", 1000000)
 
     // Get accounts

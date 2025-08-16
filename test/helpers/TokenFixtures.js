@@ -1,6 +1,6 @@
 async function deployTokenFixture() {
     const Token = await ethers.getContractFactory("Token")
-    const token = await Token.deploy("Kbessan Coin", "KBC", 1000000)
+    const token = await Token.deploy("KBessan Coin", "KBC", 1000000)
 
     const accounts = await ethers.getSigners()
     const deployer = accounts[0]
